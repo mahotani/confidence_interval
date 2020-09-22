@@ -37,3 +37,77 @@
 - ビリリダマ
 - ピッピ
 - ポッポ
+
+## データの内訳を見てみる
+
+信頼区間を求める前に、今回使用するデータの内訳をざっくり見てみます。  
+Pythonで以下のコードを書くと様々な統計量が得られます。  
+
+'''python:functions.py
+# coding: UTF-8
+
+import csv
+import numpy as np
+import pandas as pd
+
+"""
+    csvファイルの読み込み
+"""
+def read_csv(filename):
+    with open(filename, 'r') as csv_file:
+        data = list(csv.reader(csv_file))
+    
+    return data
+
+"""
+    csvファイルへの書き込み
+"""
+def write_csv(filename, data):
+    with open(filename, 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for row in data:
+            writer.writerow(row)
+
+"""
+    list内の要素をstringからfloatに変換
+"""
+def translate_to_float(string_list):
+    float_list = []
+    for element in string_list:
+        float_list.append(float(element))
+    return float_list
+
+"""
+    データの整形
+    1. １行目の消去
+    2. numpy配列への変換
+    3. 転置
+    4. string型からfloat型への変換+身長と体重を分ける
+"""
+def get_height_weight(data):
+    # 1行目の消去
+    del data[0]
+    # numpy配列への変換
+    data = np.array(data)
+    # 転置
+    data = data.T
+    # string型からfloat型への変換+身長と体重を分ける
+    heights = translate_to_float(data[0])
+    weights = translate_to_float(data[1])
+
+    return heights, weights
+
+"""
+    pandasを用いて身長と体重の様々な統計量を返す。
+"""
+def get_details(heights, weights):
+    # 身長と体重のリストをpandasのデータフレームに変換
+    height_data = pd.DataFrame(heights)
+    weight_data = pd.DataFrame(weights)
+    # 身長と体重の統計量を取得
+    height_detail = height_data.describe()
+    weight_detail = weight_data.describe()
+
+    return height_detail, weight_detail
+
+'''
