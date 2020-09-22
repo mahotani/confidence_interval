@@ -44,7 +44,6 @@
 Pythonで以下のコードを書くと様々な統計量が得られます。  
 
 '''python:functions.py
-# coding: UTF-8
 
 import csv
 import numpy as np
