@@ -41,48 +41,49 @@
 ## データの内訳を見てみる
 
 信頼区間を求める前に、今回使用するデータの内訳をざっくり見てみます。  
-Pythonで以下のコードを書くと様々な統計量が得られます。  
+Pythonで以下の2つのコードを書き、main.pyを実行すると様々な統計量が得られます。  
 
-'''python:functions.py
+```python:functions.py
+# coding: UTF-8
 
 import csv
 import numpy as np
 import pandas as pd
 
-"""
+'''
     csvファイルの読み込み
-"""
+'''
 def read_csv(filename):
     with open(filename, 'r') as csv_file:
         data = list(csv.reader(csv_file))
     
     return data
 
-"""
+'''
     csvファイルへの書き込み
-"""
+'''
 def write_csv(filename, data):
     with open(filename, 'w') as csv_file:
         writer = csv.writer(csv_file)
         for row in data:
             writer.writerow(row)
 
-"""
+'''
     list内の要素をstringからfloatに変換
-"""
+'''
 def translate_to_float(string_list):
     float_list = []
     for element in string_list:
         float_list.append(float(element))
     return float_list
 
-"""
+'''
     データの整形
     1. １行目の消去
     2. numpy配列への変換
     3. 転置
     4. string型からfloat型への変換+身長と体重を分ける
-"""
+'''
 def get_height_weight(data):
     # 1行目の消去
     del data[0]
@@ -96,9 +97,9 @@ def get_height_weight(data):
 
     return heights, weights
 
-"""
+'''
     pandasを用いて身長と体重の様々な統計量を返す。
-"""
+'''
 def get_details(heights, weights):
     # 身長と体重のリストをpandasのデータフレームに変換
     height_data = pd.DataFrame(heights)
@@ -109,4 +110,34 @@ def get_details(heights, weights):
 
     return height_detail, weight_detail
 
-'''
+```
+
+```python:functions.py
+# coding: UTF-8
+
+import csv
+import numpy as np
+import functions
+
+# 読み込みたいポケモンの名前を入力
+# 使用できるポケモンの名前 -> {ガーディ, キャタピー, サンド, ビリリダマ, ピッピ, ポッポ}
+target_pokeomo = 'ガーディ'
+
+# 使用したいcsvファイルのパス
+path = "./../csv_files/%s.csv" % target_pokeomo
+
+# csvファイルの読み込み
+heights_weights = functions.read_csv(path)
+
+# 読み込んだcsvファイルのデータを身長と体重のデータに分離
+heights, weights = functions.get_height_weight(heights_weights)
+
+# 身長と体重の統計量の取得
+height_detail, weight_detail = functions.get_details(heights, weights)
+print('%sの身長の統計量' % target_pokeomo)
+print(height_detail)
+print('----------')
+print('%sの体重の統計量' % target_pokeomo)
+print(weight_detail)
+
+```
