@@ -112,6 +112,18 @@ def get_details(heights, weights):
 
     return height_detail, weight_detail
 
+'''
+    get_height_weightとget_detailsを統合させて、
+    身長と体重両方のデータをもつ行列を入れて統計量を出せるようにする。
+'''
+def get_both_details(height_weight):
+    # get_height_weightを使って身長と体重を分ける
+    heights, weights = get_height_weight(height_weight)
+    # get_detailsを使って身長と体重の統計量を得る
+    height_detail, weight_detail = get_details(heights, weights)
+
+    return height_detail, weight_detail
+
 ```
 
 - main.py
@@ -125,7 +137,7 @@ import functions
 
 # 読み込みたいポケモンの名前を入力
 # 使用できるポケモンの名前 -> {ガーディ, キャタピー, サンド, ビリリダマ, ピッピ, ポッポ}
-target_pokeomo = 'ガーディ'
+target_pokeomo = "ガーディ"
 
 # 使用したいcsvファイルのパス
 path = "./../csv_files/%s.csv" % target_pokeomo
@@ -133,11 +145,9 @@ path = "./../csv_files/%s.csv" % target_pokeomo
 # csvファイルの読み込み
 heights_weights = functions.read_csv(path)
 
-# 読み込んだcsvファイルのデータを身長と体重のデータに分離
-heights, weights = functions.get_height_weight(heights_weights)
-
 # 身長と体重の統計量の取得
-height_detail, weight_detail = functions.get_details(heights, weights)
+height_detail, weight_detail = functions.get_both_details(heights_weights)
+
 print('%sの身長の統計量' % target_pokeomo)
 print(height_detail)
 print('----------')
@@ -158,3 +168,123 @@ print(weight_detail)
 | 中央値 | 0.610000 | 18.570000 | 0.240000 | 2.560000 | 0.520000 | 11.580000 | 0.450000 | 9.380000 | 0.520000 | 6.950000 | 0.260000 | 1.735000 |
 | 第三四分位数 | 0.870000 | 21.447500 | 0.380000 | 3.595000 | 0.760000 | 15.517500 | 0.600000 | 11.397500 | 0.740000 | 8.825000 | 0.370000 | 2.295000 |
 | 最大値 | 0.970000 | 30.350000 | 0.410000 | 4.580000 | 0.830000 | 19.430000 | 0.690000 | 15.690000 | 0.840000 | 12.020000 | 0.420000 | 2.820000 |
+
+## 区間推定
+
+信頼区間に入る前に、まず区間推定の考え方からみて行きます。  
+
+今回使用する各100体のポケモンのデータは全ポケモンに対して行う予定ですが、いったんこの世界の**ガーディ**は今回データを取った100体しかいないと仮定して身長のデータを使用します。  
+ちなみに、母集団の分布はこんな感じです。  
+
+**ガーディ100体の身長のヒストグラムを差し込む**
+
+ちょっと歪ですね・・・  
+
+これら100体から10体ずつ標本として捕獲して、何度か標本平均を取得するという作業を繰り返します。  
+今回は1000回行いました。  
+
+先ほどのmain.pyの統計量を得るためのコードをコメントアウトし、functions.pyとmain.pyに以下のコードを付け加えます。  
+
+- functions.py
+
+```python:functions.py
+'''
+    与えられた引数分の乱数のリストを生成する
+'''
+def make_random_list(target_list, len_random_list):
+    random_list = []
+    for random_list_index in range(len_random_list):
+        random_number = random.randint(0, len(target_list)-1)
+        while random_number in random_list:
+            random_number = random.randint(0, len(target_list)-1)
+        random_list.append(random_number)
+    return random_list
+
+'''
+    全体から与えられた引数分ランダムに抽出する
+'''
+def extract_from_list(target_list, len_extract_list):
+    extract_list = []
+    random_list = make_random_list(target_list, len_extract_list)
+    for index_random_list in range(len_extract_list):
+        extract_list.append(target_list[random_list[index_random_list]])
+
+    return extract_list
+
+'''
+    リストから抽出し、抽出したものの平均をとる。
+    それを指定された回数繰り返し、それらの平均を取ったリストを返す。
+'''
+def make_average_list(target_list, len_extract_list, num_simulation):
+    mean_list = []
+    for simulation in range(num_simulation):
+        extract_list = extract_from_list(target_list, len_extract_list)
+        mean_list.append(sum(extract_list) / len(extract_list))
+
+    return mean_list
+
+```
+
+- main.py
+
+```python:main.py
+# 身長と体重のデータに分離する
+heights, weights = functions.get_height_weight(heights_weights)
+
+mean_list = functions.make_average_list(heights, 10, 1000)
+plt.hist(mean_list)
+plt.show()
+
+```
+
+これを実行すると、10匹ずつの抽出を1000回した時に取った各平均の以下のようなヒストグラムがでます。  
+
+**ヒストグラムを差し込む**
+
+では、今回取得した標本の平均が母集団の分布のどこに入るか、  
+それを以下の図に示します。
+
+**イメージ図を差し込む**
+
+標本平均は上の図の矢印の範囲内に大体入ります。  
+平均に近い値になることが多く、矢印の範囲から外れることは滅多にありません。  
+
+ここまでは、イメージを固めるために標本を何度もとることを考えましたが、通常、標本を抽出する回数は1回限りです。  
+なので、1回標本を抽出した時に
+**標本平均が、推定したい母平均を含んでいる範囲はどこからどこまでなのか**
+を考えます。
+これが**信頼区間**になります。  
+
+## 信頼区間の求め方
+
+実際に信頼区間を計算していきます。  
+ここでは、ガーディは捕獲した100体だけでなく無数にいると仮定して行っていきます。
+まず、母平均の推定値として、標本平均を使用します。  
+次に、標本平均の分布の分散の推定値として、母分散をサンプルサイズで割ったものを使います。  
+ここで、母分散は不偏分散で推定します。  
+
+**標本平均の分散の式を差し込む**
+
+**標本平均の標準偏差の式を差し込む**
+
+標本平均の標準偏差のことを**標準誤差**と呼びます。  
+
+これら二つの値を用いて以下のように信頼区間を求めます。  
+
+**信頼区間の式を差し込む**
+
+ここで、"t"は信頼区間で決められた分布の面積が95%になるような数値です。  
+この"t"の具体的な値を決めるために正規分布に似た釣鐘型の**t分布**を使用します。  
+t分布はサンプルサイズによって少しずつ形が変化するのが特徴です。  
+今回は捕獲したガーディの数が100体なので、サンプルサイズは100になります。  
+
+**サンプルサイズが100の時のt分布の図を差し込む**
+
+この時の-tからtまでで挟まれた面積が全体の95%になるtの値を使用すると95%信頼区間と呼ばれるものが得られます。  
+また、99%になるtの値を使用すれば99%信頼区間が得られます。  
+
+**95%信頼区間の式を差し込む**
+
+**99%信頼区間の式を差し込む**
+
+実際にこの式にガーディの身長と体重を当てはめてみましょう。  
